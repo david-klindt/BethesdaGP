@@ -230,8 +230,8 @@ def plot_result(
             plt.text(
                 0.05, 0,
                 'GP fitting results:\n' +
-                f'\nMean = {2 ** np.sum(model.X_test[i] * model.level_prob[i]):.2f}' +
-                f'Maximum = {2 ** model.X_test[i][np.argmax(model.level_prob[i])]:.2f}' +
+                f'Mean = {2 ** np.sum(model.X_test[i] * model.level_prob[i]):.2f}' +
+                f'\nMaximum = {2 ** model.X_test[i][np.argmax(model.level_prob[i])]:.2f}' +
                 f'\n5%' + ' = %.2f' % (2 ** model.X_test[i][np.where(np.cumsum(
                     model.level_prob[i]) >= 1 - confidence_interval)[0][0]]) +
                 f'\n95%' + ' = %.2f' % (2 ** model.X_test[i][np.where(np.cumsum(
