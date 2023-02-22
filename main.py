@@ -146,7 +146,7 @@ def plot_skeleton(
             longest = np.sum(np.logical_not(np.isnan(model.data[i, j])))
     # determine x ticks
     if log:
-        xticks = np.log2(model.x_values)[:longest]
+        xticks = np.log2(model.x_values)[:longest].astype(int)
         plt.xlabel("Log inverse concentration")
     else:
         xticks = np.array([r'$2^{%s}$' % x for x in np.log2(model.x_values).astype(int)])
@@ -272,6 +272,8 @@ def plot_fig1(
         'mean_between_25_75': mean_between_25_75,
         'interpolation': interpolation
     }
+    ax2_limits = np.max(model.level_prob)
+    ax2_limits = (- 0.05 * ax2_limits, 1.05 * ax2_limits)
     plt.figure(figsize=(plot_size * 12 * 2, plot_size * 4 * model.num_subject))
     for i in range(model.num_subject):
         title = "Subject %s" % (i + 1)
@@ -303,7 +305,8 @@ def plot_fig1(
                             color='black', alpha=.5
                         )
                 plt.vlines(estimate, -10, 1.1 * np.nanmax(model.data[i]))
-                plt.text(1, 0, 'x=%.4f' % (2 ** estimate))
+                #plt.text(1, 0, 'estimate: %.4f' % (2 ** estimate))
+                plt.text(1, 0, 'estimate: %.4f' % estimate)
                 plt.title(title + ' - ' + m)
             except Exception as e:
                 plt.title(e)
@@ -312,9 +315,12 @@ def plot_fig1(
             model, i, confidence_interval=confidence_interval, plot_all=False,
             title=title + ' - ' + 'Gaussian Process')
         plt.yticks([])
+        plt.ylim(*ax2_limits)
         # take mean estimate
-        estimate = 2 ** np.sum(model.X_test[i] * model.level_prob[i])
-        ax1.text(1, 0, 'x=%.4f' % estimate)
+        #estimate = 2 ** np.sum(model.X_test[i] * model.level_prob[i])
+        estimate = np.sum(model.X_test[i] * model.level_prob[i])
+        plt.vlines(estimate, -10, 1.1 * np.nanmax(model.data[i]))
+        ax1.text(1, 0, 'estimate: %.4f' % estimate)
     plt.tight_layout()
     save_file = os.path.join(save_dir, 'fig1.png')
     print('saving figure in:', save_file)
@@ -357,6 +363,8 @@ def interpolation(x, y):
   assert x.shape == y.shape
 
   # get closest points
+  if np.min(y[1:] - y[:-1]) <= 0:
+    raise ValueError("Measurements not monotonically increasing!")
   if np.min(y) > 50:
     raise ValueError("All measurements above 50!")
   else:
