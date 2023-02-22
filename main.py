@@ -127,7 +127,7 @@ def plot_skeleton(
         model,  # GP_Model
         i,  # index of subject in data
         plot_all=False,  # if False, shows only first measurement
-        log=True  # shows log inverse concentration as x ticks
+        log_scale=True  # shows log inverse concentration as x ticks
 ):
     handle = plt.hlines(50, model.X_test[i][0], model.X_test[i][-1],
                         linestyle='--', color='grey')
@@ -145,7 +145,7 @@ def plot_skeleton(
         if np.sum(np.logical_not(np.isnan(model.data[i, j]))) > longest:
             longest = np.sum(np.logical_not(np.isnan(model.data[i, j])))
     # determine x ticks
-    if log:
+    if log_scale:
         xticks = np.log2(model.x_values)[:longest].astype(int)
         plt.xlabel("Log inverse concentration")
     else:
@@ -176,9 +176,11 @@ def make_single_plot(
         i,  # index of subject in data
         confidence_interval=0.95,  # confidence_interval
         plot_all=False,  # if False, shows only first measurement
-        title="Gaussian Process"  # default title
+        title="Gaussian Process",  # default title
+        log_scale=True  # shows log inverse concentration as x ticks
 ):
-    longest, handles, labels = plot_skeleton(model, i, plot_all=plot_all)
+    longest, handles, labels = plot_skeleton(
+        model, i, plot_all=plot_all, log_scale=log_scale)
     handle = plt.plot(model.X_test[i], model.mean_predictions[i])[0]
     handles.append(handle)
     labels.append("mean prediction")
@@ -205,6 +207,7 @@ def plot_result(
         plot_size=1.0,  # Relative plot size
         confidence_interval=0.95,  # confidence_intervals
         dpi=300,  #  figure resolution
+        log_scale=True  # shows log inverse concentration as x ticks
 ):
     os.makedirs(save_dir, exist_ok=True)
     # do twice for separate and big fig
@@ -219,7 +222,8 @@ def plot_result(
                 plt.subplot(1, 2, 1)
             handles, labels, ax1 = make_single_plot(
                 model, i, confidence_interval=confidence_interval,
-                title="Subject %s" % (i + 1), plot_all=True
+                title="Subject %s" % (i + 1), plot_all=True,
+                log_scale=log_scale
             )
             if ind == 0:
                 plt.subplot(model.num_subject, 2, i * 2 + 2)
@@ -227,15 +231,24 @@ def plot_result(
                 plt.subplot(1, 2, 2)
             plt.axis('off')
             plt.legend(handles, labels, loc='upper left')
+            mean = np.sum(model.X_test[i] * model.level_prob[i])
+            max = model.X_test[i][np.argmax(model.level_prob[i])]
+            q5 = model.X_test[i][np.where(np.cumsum(
+                model.level_prob[i]) >= 1 - confidence_interval)[0][0]]
+            q95 = model.X_test[i][np.where(np.cumsum(
+                    model.level_prob[i]) >= confidence_interval)[0][0]]
+            if not log_scale:
+                mean = 2 ** mean
+                max = 2 ** max
+                q5 = 2 ** q5
+                q95 = 2 ** q95
             plt.text(
                 0.05, 0,
                 'GP fitting results:\n' +
-                f'Mean = {2 ** np.sum(model.X_test[i] * model.level_prob[i]):.2f}' +
-                f'\nMaximum = {2 ** model.X_test[i][np.argmax(model.level_prob[i])]:.2f}' +
-                f'\n5%' + ' = %.2f' % (2 ** model.X_test[i][np.where(np.cumsum(
-                    model.level_prob[i]) >= 1 - confidence_interval)[0][0]]) +
-                f'\n95%' + ' = %.2f' % (2 ** model.X_test[i][np.where(np.cumsum(
-                    model.level_prob[i]) >= confidence_interval)[0][0]]) +
+                f'Mean = {mean:.2f}' +
+                f'\nMaximum = {max:.2f}' +
+                f'\n5%' + ' = %.2f' % q5 +
+                f'\n95%' + ' = %.2f' % q95 +
                 f'\nKernel 1: {model.models[i].kernel_.k1}' +
                 f'\nKernel 2: {model.models[i].kernel_.k2}' +
                 f'\nLogLikelihood = {model.models[i].log_marginal_likelihood():.2f}'
@@ -264,6 +277,8 @@ def plot_fig1(
         confidence_interval=0.95,   # confidence_intervals
         point_size=300,  # size of points in sactter plot
         dpi=300,  #  figure resolution
+        gp_output='mean',  # what estimate to return for GP
+        log_scale=True  # shows log inverse concentration as x ticks
 ):
     os.makedirs(save_dir, exist_ok=True)
     methods = {
@@ -279,7 +294,8 @@ def plot_fig1(
         title = "Subject %s" % (i + 1)
         for k, m in enumerate(methods):
             plt.subplot(model.num_subject, 6, 1 + k + i * 6)
-            longest, handles, labels = plot_skeleton(model, i, plot_all=False)
+            longest, handles, labels = plot_skeleton(
+                model, i, plot_all=False, log_scale=log_scale)
             try:
                 if m in ['closest_to_50', 'first_over_25',
                          'mean_between_25_75', 'interpolation']:
@@ -305,8 +321,9 @@ def plot_fig1(
                             color='black', alpha=.5
                         )
                 plt.vlines(estimate, -10, 1.1 * np.nanmax(model.data[i]))
-                #plt.text(1, 0, 'estimate: %.4f' % (2 ** estimate))
-                plt.text(1, 0, 'estimate: %.4f' % estimate)
+                if not log_scale:
+                    estimate = 2 ** estimate
+                plt.text(0, 0, 'estimate: %.4f' % estimate)
                 plt.title(title + ' - ' + m)
             except Exception as e:
                 plt.title(e)
@@ -317,10 +334,16 @@ def plot_fig1(
         plt.yticks([])
         plt.ylim(*ax2_limits)
         # take mean estimate
-        #estimate = 2 ** np.sum(model.X_test[i] * model.level_prob[i])
-        estimate = np.sum(model.X_test[i] * model.level_prob[i])
+        if gp_output == 'mean':
+            estimate = np.sum(model.X_test[i] * model.level_prob[i])
+        elif gp_output == 'max':
+            estimate = model.X_test[i][np.argmax(model.level_prob[i])]
+        else:
+            raise ValueError("gp_output not defined, must be one of: {'mean', 'max'}")
         plt.vlines(estimate, -10, 1.1 * np.nanmax(model.data[i]))
-        ax1.text(1, 0, 'estimate: %.4f' % estimate)
+        if not log_scale:
+            estimate = 2 ** estimate
+        ax1.text(0, 0, 'estimate: %.4f' % estimate)
     plt.tight_layout()
     save_file = os.path.join(save_dir, 'fig1.png')
     print('saving figure in:', save_file)
