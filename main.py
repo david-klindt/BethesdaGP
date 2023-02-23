@@ -5,7 +5,7 @@ import time
 import os
 import sys
 import warnings
-warnings.filterwarnings("ignore")
+import pandas as pd
 
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, WhiteKernel, ConstantKernel
@@ -287,6 +287,10 @@ def plot_fig1(
         'mean_between_25_75': mean_between_25_75,
         'interpolation': interpolation
     }
+    df = pd.DataFrame(
+        index=['subject %s' % (i + 1) for i in range(model.num_subject)],
+        columns=list(methods.keys()) + ['GP']
+    )
     ax2_limits = np.max(model.level_prob)
     ax2_limits = (- 0.05 * ax2_limits, 1.05 * ax2_limits)
     plt.figure(figsize=(plot_size * 12 * 2, plot_size * 4 * model.num_subject))
@@ -302,6 +306,7 @@ def plot_fig1(
                     estimate, ind = methods[m](
                         np.log2(model.x_values)[:longest], model.data[i, 0, :longest]
                     )
+                    df[m]['subject %s' % i] = 2 ** estimate
                     plt.scatter(
                         np.log2(model.x_values)[:longest][ind],
                         model.data[i, 0][:longest][ind],
@@ -341,6 +346,7 @@ def plot_fig1(
             estimate = model.X_test[i][np.argmax(model.level_prob[i])]
         else:
             raise ValueError("gp_output not defined, must be one of: {'mean', 'max'}")
+        df['GP']['subject %s' % i] = 2 ** estimate
         plt.vlines(estimate, -10, 1.1 * np.nanmax(model.data[i]))
         if not log_scale:
             estimate = 2 ** estimate
@@ -350,6 +356,7 @@ def plot_fig1(
     print('saving figure in:', save_file)
     plt.savefig(save_file, dpi=dpi)
     plt.show()
+    df.to_excel(os.path.join(save_dir, 'output.xlsx'))
 
 
 ### Other Methods ###
