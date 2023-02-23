@@ -387,12 +387,12 @@ def interpolation(x, y):
   assert x.shape == y.shape
 
   # get closest points
-  if np.min(y[1:] - y[:-1]) <= 0:
-    raise ValueError("Measurements not monotonically increasing!")
+  #if np.min(y[1:] - y[:-1]) <= 0:
+  #  raise ValueError("Measurements not monotonically increasing!")
   if np.min(y) > 50:
     raise ValueError("All measurements above 50!")
   else:
-    ind_0 = 0
+    ind_0 = np.where(y < 50)[0][0]
   if np.max(y) < 50:
     raise ValueError("All measurements under 50!")
   else:
