@@ -329,7 +329,8 @@ def plot_fig1(
                 plt.title(e)
         plt.subplot(model.num_subject, 6, 5 + i * 6)
         handles, labels, ax1 = make_single_plot(
-            model, i, confidence_interval=confidence_interval, plot_all=False,
+            model, i, confidence_interval=confidence_interval,
+            plot_all=False, log_scale=log_scale,
             title=title + ' - ' + 'Gaussian Process')
         plt.yticks([])
         plt.ylim(*ax2_limits)
