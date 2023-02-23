@@ -385,7 +385,23 @@ def mean_between_25_75(x, y):
 def interpolation(x, y):
   "Returns interpolated x for closest y_0<50 and y_1>50."
   assert x.shape == y.shape
-
+  # checks
+  if np.min(y) > 50:
+    raise ValueError("All measurements above 50!")
+  if np.max(y) < 50:
+    raise ValueError("All measurements under 50!")
+  # search from last value
+  ind_1 = len(y) - 1
+  ind_0 = len(y) - 2
+  while True:
+      if y[ind_1] > 50 and y[ind_0] < 50:
+          break
+      else:
+          ind_0 -= 1
+          ind_1 -= 1
+      if ind_0 < 0:
+          raise ValueError("Interpolation conditions not met!")
+  """
   # get closest points
   #if np.min(y[1:] - y[:-1]) <= 0:
   #  raise ValueError("Measurements not monotonically increasing!")
@@ -410,7 +426,7 @@ def interpolation(x, y):
     pass
   else:
     raise ValueError("Higher point before lower point!")
-
+  """
   # interpolate
   x_1 = x[ind_0]
   x_2 = x[ind_1]
@@ -419,6 +435,5 @@ def interpolation(x, y):
   intercept = y_1 - (y_2 - y_1) / (x_2 - x_1) * x_1
   y_c = 50
   x_c = (y_c - intercept) * (x_2 - x_1) / (y_2 - y_1)
-
   return x_c, np.array((ind_0, ind_1))
 
