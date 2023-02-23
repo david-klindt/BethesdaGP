@@ -394,39 +394,13 @@ def interpolation(x, y):
   ind_1 = len(y) - 1
   ind_0 = len(y) - 2
   while True:
-      if y[ind_1] > 50 and y[ind_0] < 50:
+      if y[ind_0] <= 50 and 50 <= y[ind_1]:
           break
       else:
           ind_0 -= 1
           ind_1 -= 1
       if ind_0 < 0:
           raise ValueError("Interpolation conditions not met!")
-  """
-  # get closest points
-  #if np.min(y[1:] - y[:-1]) <= 0:
-  #  raise ValueError("Measurements not monotonically increasing!")
-  if np.min(y) > 50:
-    raise ValueError("All measurements above 50!")
-  else:
-    ind_0 = np.where(y < 50)[0][0]
-  if np.max(y) < 50:
-    raise ValueError("All measurements under 50!")
-  else:
-    y = y.copy()
-    y[np.isnan(y)] = np.inf
-    ind_1 = len(y) - 1
-  for ind, value in enumerate(y):
-    if y[ind] < 50:
-      if y[ind] > y[ind_0]:
-        ind_0 = ind
-    else:
-      if y[ind] < y[ind_1]:
-        ind_1 = ind
-  if ind_0 < ind_1:
-    pass
-  else:
-    raise ValueError("Higher point before lower point!")
-  """
   # interpolate
   x_1 = x[ind_0]
   x_2 = x[ind_1]
