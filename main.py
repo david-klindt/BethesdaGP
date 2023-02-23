@@ -306,7 +306,7 @@ def plot_fig1(
                     estimate, ind = methods[m](
                         np.log2(model.x_values)[:longest], model.data[i, 0, :longest]
                     )
-                    df[m]['subject %s' % i] = 2 ** estimate
+                    df[m]['subject %s' % (i + 1)] = 2. ** estimate
                     plt.scatter(
                         np.log2(model.x_values)[:longest][ind],
                         model.data[i, 0][:longest][ind],
@@ -346,14 +346,14 @@ def plot_fig1(
             estimate = model.X_test[i][np.argmax(model.level_prob[i])]
         else:
             raise ValueError("gp_output not defined, must be one of: {'mean', 'max'}")
-        df['GP']['subject %s' % i] = 2 ** estimate
+        df['GP']['subject %s' % (i + 1)] = 2. ** estimate
         plt.vlines(estimate, -10, 1.1 * np.nanmax(model.data[i]))
         if not log_scale:
             estimate = 2 ** estimate
         ax1.text(0, 0, 'estimate: %.4f' % estimate)
     plt.tight_layout()
     save_file = os.path.join(save_dir, 'fig1.png')
-    print('saving figure in:', save_file)
+    print('saving figure and output table in:', save_file)
     plt.savefig(save_file, dpi=dpi)
     plt.show()
     df.to_excel(os.path.join(save_dir, 'output.xlsx'))
