@@ -24,6 +24,7 @@ class GP_Model:
             noise_lower_bound=1.0,  # lower scale for noise kernel
             noise_upper_bound=20.0,  # upper scale for noise kernel
             num_test=10000,  # number of test points for inference
+            dilution_lower_bound=None,
     ):
         # parameters
         self.level = level
@@ -33,6 +34,7 @@ class GP_Model:
         self.noise_level = noise_level
         self.noise_level_bounds = (noise_lower_bound, noise_upper_bound)
         self.num_test = num_test
+        self.dilution_lower_bound = dilution_lower_bound
         # fitting
         self.X_test = []
         self.level_prob = []
@@ -92,7 +94,9 @@ class GP_Model:
             x = X[good_ind]
             y = Y[good_ind]
             self.X_test.append(
-                np.linspace(x.min(), x.max(), self.num_test)
+                np.linspace(
+                x.min() if self.dilution_lower_bound is None else self.dilution_lower_bound,
+                x.max(), self.num_test)
             )
             # fit model
             self.models.append(
