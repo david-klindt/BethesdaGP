@@ -24,7 +24,7 @@ class GP_Model:
             noise_lower_bound=1.0,  # lower scale for noise kernel
             noise_upper_bound=20.0,  # upper scale for noise kernel
             num_test=10000,  # number of test points for inference
-            dilution_lower_bound=None,
+            dilution_lower_bound=None,  # lower bound for GP inference (in log2)
     ):
         # parameters
         self.level = level
