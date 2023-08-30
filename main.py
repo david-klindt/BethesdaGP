@@ -96,7 +96,7 @@ class GP_Model:
             self.X_test.append(
                 np.linspace(
                 x.min() if self.dilution_lower_bound is None else self.dilution_lower_bound,
-                x.max(), self.num_test)
+                x.max() + 1, self.num_test)
             )
             # fit model
             self.models.append(
@@ -189,6 +189,7 @@ def make_single_plot(
         title="Gaussian Process",  # default title
         log_scale=True,  # shows log inverse concentration as x ticks
         plot_grid=True,
+        ylim=None,
 ):
     longest, handles, labels = plot_skeleton(
         model, i, plot_all=plot_all, log_scale=log_scale, plot_grid=plot_grid
@@ -206,6 +207,8 @@ def make_single_plot(
     handles.append(handle)
     labels.append("%s confidence interval" % confidence_interval)
     plt.title(title)
+    if ylim is not None:
+        plt.ylim(*ylim)
     ax1 = plt.gca()
     ax2 = plt.gca().twinx()
     _ = ax2.plot(model.X_test[i], model.level_prob[i], 'red')
@@ -306,11 +309,8 @@ def plot_fig1(
         index=['subject %s' % (i + 1) for i in range(model.num_subject)],
         columns=list(methods.keys()) + ['GP']
     )
-    if ylim is None:
-        ax2_limits = np.max(model.level_prob)
-        ax2_limits = (- 0.05 * ax2_limits, 1.05 * ax2_limits)
-    else:
-        ax2_limits = ylim
+    ax2_limits = np.max(model.level_prob)
+    ax2_limits = (- 0.05 * ax2_limits, 1.05 * ax2_limits)
     plt.figure(figsize=(plot_size * 12 * 2, plot_size * 4 * model.num_subject))
     for i in range(model.num_subject):
         title = "Subject %s" % (i + 1)
@@ -345,7 +345,10 @@ def plot_fig1(
                             model.data[i, 0, :longest][ind],
                             color='black', alpha=.5
                         )
-                plt.vlines(estimate, -10, 1.1 * np.nanmax(model.data[i]))
+                if ylim is None:
+                    plt.vlines(estimate, -10, 1.1 * np.nanmax(model.data[i]))
+                else:
+                    plt.vlines(estimate, ylim[0], ylim[1])
                 if not log_scale:
                     estimate = 2 ** estimate
                 if plot_estimate:
@@ -357,9 +360,10 @@ def plot_fig1(
         handles, labels, ax1 = make_single_plot(
             model, i, confidence_interval=confidence_interval,
             plot_all=False, log_scale=log_scale, plot_grid=plot_grid,
-            title=title + ' - ' + 'Gaussian Process')
+            title=title + ' - ' + 'Gaussian Process', ylim=ylim
+        )
         plt.yticks([])
-        ax1.set_ylim(*ax2_limits)
+        plt.ylim(*ax2_limits)
         # take mean estimate
         if gp_output == 'mean':
             estimate = np.sum(model.X_test[i] * model.level_prob[i])
