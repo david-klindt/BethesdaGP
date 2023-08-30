@@ -132,6 +132,7 @@ def plot_skeleton(
         i,  # index of subject in data
         plot_all=False,  # if False, shows only first measurement
         log_scale=True  # shows log inverse concentration as x ticks
+        plot_grid=True,
 ):
     handle = plt.hlines(50, model.X_test[i][0], model.X_test[i][-1],
                         linestyle='--', color='grey')
@@ -157,7 +158,8 @@ def plot_skeleton(
         plt.xlabel("Inverse concentration")
     plt.xticks(np.log2(model.x_values)[:longest], xticks[:longest])
     plt.ylabel("Saturation [%]")
-    plt.grid()
+    if plot_grid:
+        plt.grid()
     plt.xlim(-.5, longest - .5)
     plt.ylim(-10, 1.1 * np.nanmax(model.data[i]))
     return longest, handles, labels
@@ -283,6 +285,7 @@ def plot_fig1(
         dpi=300,  #  figure resolution
         gp_output='mean',  # what estimate to return for GP
         log_scale=True  # shows log inverse concentration as x ticks
+        plot_grid=True,
 ):
     os.makedirs(save_dir, exist_ok=True)
     methods = {
@@ -303,7 +306,9 @@ def plot_fig1(
         for k, m in enumerate(methods):
             plt.subplot(model.num_subject, 6, 1 + k + i * 6)
             longest, handles, labels = plot_skeleton(
-                model, i, plot_all=False, log_scale=log_scale)
+                model, i, plot_all=False, log_scale=log_scale,
+                plot_grid=plot_grid,
+            )
             try:
                 if m in ['closest_to_50', 'first_over_25',
                          'mean_between_25_75', 'interpolation']:
