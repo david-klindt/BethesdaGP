@@ -131,7 +131,7 @@ def plot_skeleton(
         model,  # GP_Model
         i,  # index of subject in data
         plot_all=False,  # if False, shows only first measurement
-        log_scale=True  # shows log inverse concentration as x ticks
+        log_scale=True,  # shows log inverse concentration as x ticks
         plot_grid=True,
 ):
     handle = plt.hlines(50, model.X_test[i][0], model.X_test[i][-1],
@@ -284,7 +284,7 @@ def plot_fig1(
         point_size=300,  # size of points in sactter plot
         dpi=300,  #  figure resolution
         gp_output='mean',  # what estimate to return for GP
-        log_scale=True  # shows log inverse concentration as x ticks
+        log_scale=True,  # shows log inverse concentration as x ticks
         plot_grid=True,
         plot_estimate=True,
 ):
