@@ -135,7 +135,7 @@ def plot_skeleton(
         plot_grid=True,
         ylim=None,
 ):
-    handle = plt.hlines(50, model.X_test[i][0], model.X_test[i][-1],
+    handle = plt.hlines(50, model.X_test[i][0], model.X_test[i][-1] + 1,
                         linestyle='--', color='grey')
     handles = [handle]
     labels= [f"Saturation = 50%"]
