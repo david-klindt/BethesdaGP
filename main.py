@@ -286,6 +286,7 @@ def plot_fig1(
         gp_output='mean',  # what estimate to return for GP
         log_scale=True  # shows log inverse concentration as x ticks
         plot_grid=True,
+        plot_estimate=True,
 ):
     os.makedirs(save_dir, exist_ok=True)
     methods = {
@@ -359,7 +360,8 @@ def plot_fig1(
         plt.vlines(estimate, -10, 1.1 * np.nanmax(model.data[i]))
         if not log_scale:
             estimate = 2 ** estimate
-        ax1.text(0, 0, 'estimate: %.4f' % estimate)
+        if plot_estimate:
+            ax1.text(0, 0, 'estimate: %.4f' % estimate)
     plt.tight_layout()
     save_file = os.path.join(save_dir, 'fig1.png')
     print('saving figure and output table in:', save_file)
