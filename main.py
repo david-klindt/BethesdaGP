@@ -306,8 +306,11 @@ def plot_fig1(
         index=['subject %s' % (i + 1) for i in range(model.num_subject)],
         columns=list(methods.keys()) + ['GP']
     )
-    ax2_limits = np.max(model.level_prob)
-    ax2_limits = (- 0.05 * ax2_limits, 1.05 * ax2_limits)
+    if ylim is None:
+        ax2_limits = np.max(model.level_prob)
+        ax2_limits = (- 0.05 * ax2_limits, 1.05 * ax2_limits)
+    else:
+        ax2_limits = ylim
     plt.figure(figsize=(plot_size * 12 * 2, plot_size * 4 * model.num_subject))
     for i in range(model.num_subject):
         title = "Subject %s" % (i + 1)
@@ -315,7 +318,7 @@ def plot_fig1(
             plt.subplot(model.num_subject, 6, 1 + k + i * 6)
             longest, handles, labels = plot_skeleton(
                 model, i, plot_all=False, log_scale=log_scale,
-                plot_grid=plot_grid,
+                plot_grid=plot_grid, ylim=ylim,
             )
             try:
                 if m in ['closest_to_50', 'first_over_25',
@@ -356,10 +359,7 @@ def plot_fig1(
             plot_all=False, log_scale=log_scale, plot_grid=plot_grid,
             title=title + ' - ' + 'Gaussian Process')
         plt.yticks([])
-        if ylim is None:
-            plt.ylim(*ax2_limits)
-        else:
-            plt.ylim(*ylim)
+        ax1.set_ylim(*ax2_limits)
         # take mean estimate
         if gp_output == 'mean':
             estimate = np.sum(model.X_test[i] * model.level_prob[i])
