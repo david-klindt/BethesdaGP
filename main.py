@@ -183,10 +183,12 @@ def make_single_plot(
         confidence_interval=0.95,  # confidence_interval
         plot_all=False,  # if False, shows only first measurement
         title="Gaussian Process",  # default title
-        log_scale=True  # shows log inverse concentration as x ticks
+        log_scale=True,  # shows log inverse concentration as x ticks
+        plot_grid=True,
 ):
     longest, handles, labels = plot_skeleton(
-        model, i, plot_all=plot_all, log_scale=log_scale)
+        model, i, plot_all=plot_all, log_scale=log_scale, plot_grid=plot_grid
+    )
     handle = plt.plot(model.X_test[i], model.mean_predictions[i])[0]
     handles.append(handle)
     labels.append("mean prediction")
@@ -338,14 +340,15 @@ def plot_fig1(
                 plt.vlines(estimate, -10, 1.1 * np.nanmax(model.data[i]))
                 if not log_scale:
                     estimate = 2 ** estimate
-                plt.text(0, 0, 'estimate: %.4f' % estimate)
+                if plot_estimate:
+                    plt.text(0, 0, 'estimate: %.4f' % estimate)
                 plt.title(title + ' - ' + m)
             except Exception as e:
                 plt.title(e)
         plt.subplot(model.num_subject, 6, 5 + i * 6)
         handles, labels, ax1 = make_single_plot(
             model, i, confidence_interval=confidence_interval,
-            plot_all=False, log_scale=log_scale,
+            plot_all=False, log_scale=log_scale, plot_grid=plot_grid,
             title=title + ' - ' + 'Gaussian Process')
         plt.yticks([])
         plt.ylim(*ax2_limits)
