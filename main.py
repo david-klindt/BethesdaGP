@@ -133,6 +133,7 @@ def plot_skeleton(
         plot_all=False,  # if False, shows only first measurement
         log_scale=True,  # shows log inverse concentration as x ticks
         plot_grid=True,
+        ylim=None,
 ):
     handle = plt.hlines(50, model.X_test[i][0], model.X_test[i][-1],
                         linestyle='--', color='grey')
@@ -161,7 +162,10 @@ def plot_skeleton(
     if plot_grid:
         plt.grid()
     plt.xlim(-.5, longest - .5)
-    plt.ylim(-10, 1.1 * np.nanmax(model.data[i]))
+    if ylim is None:
+        plt.ylim(-10, 1.1 * np.nanmax(model.data[i]))
+    else:
+        plt.ylim(*ylim)
     return longest, handles, labels
 
 
@@ -289,6 +293,7 @@ def plot_fig1(
         log_scale=True,  # shows log inverse concentration as x ticks
         plot_grid=True,
         plot_estimate=True,
+        ylim=None,
 ):
     os.makedirs(save_dir, exist_ok=True)
     methods = {
@@ -326,10 +331,10 @@ def plot_fig1(
                         facecolors='none', edgecolors='r'
                     )
                     if m in ['first_over_25', 'mean_between_25_75']:
-                        plt.hlines(25, model.X_test[i][0], model.X_test[i][-1],
+                        plt.hlines(25, model.X_test[i][0], model.X_test[i][-1] + 1,
                                             linestyle='--', color='green')
                     if m == 'mean_between_25_75':
-                        plt.hlines(75, model.X_test[i][0], model.X_test[i][-1],
+                        plt.hlines(75, model.X_test[i][0], model.X_test[i][-1] + 1,
                                             linestyle='--', color='green')
                     if m == 'interpolation':
                         plt.plot(
@@ -351,7 +356,10 @@ def plot_fig1(
             plot_all=False, log_scale=log_scale, plot_grid=plot_grid,
             title=title + ' - ' + 'Gaussian Process')
         plt.yticks([])
-        plt.ylim(*ax2_limits)
+        if ylim is None:
+            plt.ylim(*ax2_limits)
+        else:
+            plt.ylim(*ylim)
         # take mean estimate
         if gp_output == 'mean':
             estimate = np.sum(model.X_test[i] * model.level_prob[i])
