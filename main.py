@@ -25,6 +25,7 @@ class GP_Model:
             noise_upper_bound=20.0,  # upper scale for noise kernel
             num_test=10000,  # number of test points for inference
             dilution_lower_bound=None,  # lower bound for GP inference (in log2)
+            dilution_upper_bound=None,  # upper bound for GP inference (in log2)
     ):
         # parameters
         self.level = level
@@ -35,6 +36,7 @@ class GP_Model:
         self.noise_level_bounds = (noise_lower_bound, noise_upper_bound)
         self.num_test = num_test
         self.dilution_lower_bound = dilution_lower_bound
+        self.dilution_upper_bound = dilution_upper_bound
         # fitting
         self.X_test = []
         self.level_prob = []
@@ -95,8 +97,10 @@ class GP_Model:
             y = Y[good_ind]
             self.X_test.append(
                 np.linspace(
-                x.min() if self.dilution_lower_bound is None else self.dilution_lower_bound,
-                x.max() + 1, self.num_test)
+                    x.min() if self.dilution_lower_bound is None else self.dilution_lower_bound,
+                    x.max() if self.dilution_upper_bound is None else self.dilution_upper_bound,
+                    self.num_test
+                )
             )
             # fit model
             self.models.append(
@@ -135,7 +139,7 @@ def plot_skeleton(
         plot_grid=True,
         ylim=None,
 ):
-    handle = plt.hlines(50, model.X_test[i][0], model.X_test[i][-1] + 1,
+    handle = plt.hlines(50, model.X_test[i][0] - 1, model.X_test[i][-1] + 1,
                         linestyle='--', color='grey')
     handles = [handle]
     labels= [f"Saturation = 50%"]
@@ -334,10 +338,10 @@ def plot_fig1(
                         facecolors='none', edgecolors='r'
                     )
                     if m in ['first_over_25', 'mean_between_25_75']:
-                        plt.hlines(25, model.X_test[i][0], model.X_test[i][-1] + 1,
+                        plt.hlines(25, model.X_test[i][0] - 1, model.X_test[i][-1] + 1,
                                             linestyle='--', color='green')
                     if m == 'mean_between_25_75':
-                        plt.hlines(75, model.X_test[i][0], model.X_test[i][-1] + 1,
+                        plt.hlines(75, model.X_test[i][0] - 1, model.X_test[i][-1] + 1,
                                             linestyle='--', color='green')
                     if m == 'interpolation':
                         plt.plot(
