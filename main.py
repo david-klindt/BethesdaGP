@@ -13,6 +13,11 @@ from sklearn.gaussian_process.kernels import RBF, WhiteKernel, ConstantKernel
 from scipy.stats import norm
 
 
+def get_be(x, y):
+    # compute Bethesda units (i.e. correction for not hitting y=50)
+    return (2 - np.log10(y)) / np.log10(2) * x
+
+
 class GP_Model:
     def __init__(
             self,
@@ -250,28 +255,51 @@ def plot_result(
                 plt.subplot(1, 2, 2)
             plt.axis('off')
             plt.legend(handles, labels, loc='upper left')
-            mean = np.sum(model.X_test[i] * model.level_prob[i])
-            max = model.X_test[i][np.argmax(model.level_prob[i])]
-            q5 = model.X_test[i][np.where(np.cumsum(
-                model.level_prob[i]) >= 1 - confidence_interval)[0][0]]
-            q95 = model.X_test[i][np.where(np.cumsum(
-                    model.level_prob[i]) >= confidence_interval)[0][0]]
-            if not log_scale:
-                mean = 2 ** mean
-                max = 2 ** max
-                q5 = 2 ** q5
-                q95 = 2 ** q95
-            plt.text(
-                0.05, 0,
-                'GP fitting results:\n' +
-                f'Mean = {mean:.2f}' +
-                f'\nMaximum = {max:.2f}' +
-                f'\n5%' + ' = %.2f' % q5 +
-                f'\n95%' + ' = %.2f' % q95 +
-                f'\nKernel 1: {model.models[i].kernel_.k1}' +
-                f'\nKernel 2: {model.models[i].kernel_.k2}' +
-                f'\nLogLikelihood = {model.models[i].log_marginal_likelihood():.2f}'
-            )
+            ind_peak = np.argmax(model.level_prob[i])
+            if ind_peak > 0:
+                max = model.X_test[i][ind_peak]
+                mean = np.sum(model.X_test[i] * model.level_prob[i])
+                q5 = model.X_test[i][np.where(np.cumsum(
+                    model.level_prob[i]) >= 1 - confidence_interval)[0][0]]
+                q95 = model.X_test[i][np.where(np.cumsum(
+                        model.level_prob[i]) >= confidence_interval)[0][0]]
+                if not log_scale:
+                    mean = 2 ** mean
+                    max = 2 ** max
+                    q5 = 2 ** q5
+                    q95 = 2 ** q95
+                plt.text(
+                    0.05, 0,
+                    'GP fitting results:' +
+                    f'\nMean = {mean:.2f}' +
+                    f'\nMaximum = {max:.2f}' +
+                    f'\n5%' + ' = %.2f' % q5 +
+                    f'\n95%' + ' = %.2f' % q95 +
+                    f'\nKernel 1: {model.models[i].kernel_.k1}' +
+                    f'\nKernel 2: {model.models[i].kernel_.k2}' +
+                    f'\nLogLikelihood = {model.models[i].log_marginal_likelihood():.2f}'
+                )
+            else:
+                x = 2 ** model.X_test[i][ind_peak]
+                y = model.mean_predictions[i][ind_peak]
+                std = model.std_predictions[i][ind_peak]
+                ci = get_confidence_interval(confidence_interval)
+                be = get_be(x, y)
+                be_lower = get_be(x, y + ci * std)
+                be_upper = get_be(x, y - ci * std)
+                plt.text(
+                    0.05, 0,
+                    'GP fitting results:' +
+                    '\nPEAK OUTSIDE DATA!' +
+                    f'\nB.E. = {be:.4f}' +
+                    f'\n5%' + ' = %.4f' % be_lower +
+                    f'\n95%' + ' = %.4f' % be_upper +
+                    f'\nKernel 1: {model.models[i].kernel_.k1}' +
+                    f'\nKernel 2: {model.models[i].kernel_.k2}' +
+                    f'\nLogLikelihood = {model.models[i].log_marginal_likelihood():.2f}'
+                )
+
+
             plt.tight_layout()
             if ind == 1:
                 save_file = os.path.join(
@@ -368,19 +396,30 @@ def plot_fig1(
         )
         plt.yticks([])
         plt.ylim(*ax2_limits)
-        # take mean estimate
-        if gp_output == 'mean':
-            estimate = np.sum(model.X_test[i] * model.level_prob[i])
-        elif gp_output == 'max':
-            estimate = model.X_test[i][np.argmax(model.level_prob[i])]
+        # compute GP estimate
+        ind_peak = np.argmax(model.level_prob[i])
+        if ind_peak > 0:
+            if gp_output == 'mean':
+                estimate = np.sum(model.X_test[i] * model.level_prob[i])
+            elif gp_output == 'max':
+                estimate = model.X_test[i][np.argmax(model.level_prob[i])]
+            else:
+                raise ValueError("gp_output not defined, must be one of: {'mean', 'max'}")
         else:
-            raise ValueError("gp_output not defined, must be one of: {'mean', 'max'}")
+            x = 2 ** model.X_test[i][ind_peak]
+            y = model.mean_predictions[i][ind_peak]
+            be = get_be(x, y)
+            estimate = np.log2(be)
         df['GP']['subject %s' % (i + 1)] = 2. ** estimate
         plt.vlines(estimate, -10, 1.1 * np.nanmax(model.data[i]))
         if not log_scale:
             estimate = 2 ** estimate
         if plot_estimate:
-            ax1.text(0, 0, 'estimate: %.4f' % estimate)
+            if ind_peak > 0:
+                ax1.text(0, 0, 'estimate: %.4f' % estimate)
+            else:
+                ax1.text(0, 0.1, 'PEAK OUTSIDE DATA!\nB.E.: %.4f' % estimate)
+
     plt.tight_layout()
     save_file = os.path.join(save_dir, 'fig1.png')
     print('saving figure and output table in:', save_file)
